@@ -1,0 +1,14 @@
+{
+  "name": "bux-mont-hideaway",
+  "version": "1.0.0",
+  "description": "Bux-Mont Hideaway personal blog",
+  "scripts": {
+    "build": "hugo",
+    "serve": "hugo server --buildDrafts"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "postcss-cli": "^11.0.0"
+  }
+}
