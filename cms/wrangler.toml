@@ -1,0 +1,27 @@
+name = "bux-mont-hideaway-cms"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_SESSION_KV_ID"
+preview_id = "REPLACE_WITH_SESSION_KV_PREVIEW_ID"
+
+[vars]
+# Set BASE_URL after first deploy to your actual workers.dev URL (or custom domain)
+# BASE_URL = "https://bux-mont-hideaway-cms.YOUR_ACCOUNT.workers.dev"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   GOOGLE_CLIENT_ID
+#   GOOGLE_CLIENT_SECRET
+#   ANTHROPIC_API_KEY
+#   GITHUB_TOKEN
+#   ALLOWED_EMAILS     (comma-separated parent Gmail addresses)
+#   SESSION_SECRET     (random 32-char hex string)
+#   BASE_URL           (e.g. https://bux-mont-hideaway-cms.YOUR_SUBDOMAIN.workers.dev)

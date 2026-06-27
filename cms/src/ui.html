@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bux-Mont Hideaway — Write a Post</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #2e7d52;
+    --green-light: #e8f5ee;
+    --green-hover: #245f3f;
+    --gray: #6b7280;
+    --border: #d1d5db;
+    --bg: #f9fafb;
+    --white: #ffffff;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: #1f2937;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--green);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; }
+  header .user { font-size: 0.9rem; opacity: 0.85; }
+  header a { color: white; opacity: 0.8; font-size: 0.85rem; text-decoration: underline; }
+
+  main {
+    max-width: 860px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .step-num {
+    background: var(--green);
+    color: white;
+    border-radius: 50%;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Post type selector */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .type-option {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .type-option:hover { border-color: var(--green); background: var(--green-light); }
+  .type-option.selected { border-color: var(--green); background: var(--green-light); }
+  .type-option input[type="radio"] { position: absolute; opacity: 0; }
+  .type-option .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+  .type-option strong { display: block; font-size: 1rem; margin-bottom: 0.25rem; }
+  .type-option span { font-size: 0.85rem; color: var(--gray); line-height: 1.4; }
+
+  label { display: block; font-weight: 600; margin-bottom: 0.4rem; font-size: 0.9rem; }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(46,125,82,0.1);
+  }
+
+  .hint { font-size: 0.8rem; color: var(--gray); margin-top: 0.35rem; }
+
+  /* Photo drop zone */
+  #photo-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--gray);
+  }
+
+  #photo-zone.dragover { border-color: var(--green); background: var(--green-light); }
+  #photo-zone .zone-icon { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+  #photo-zone input { display: none; }
+
+  #thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .thumb-wrap {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-wrap button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) { background: var(--green-hover); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--border);
+    color: #374151;
+  }
+  .btn-secondary:hover:not(:disabled) { background: #b9bec7; }
+
+  .btn-danger {
+    background: #dc2626;
+    color: white;
+  }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+  .btn-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  /* AI draft area */
+  #draft-card { display: none; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .tab {
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    transition: all 0.15s;
+  }
+
+  .tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+  #edit-pane, #preview-pane { width: 100%; }
+  #preview-pane { display: none; }
+
+  #draft-body {
+    min-height: 200px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  #preview-content {
+    min-height: 200px;
+    line-height: 1.7;
+    font-size: 0.95rem;
+    padding: 0.25rem 0;
+  }
+
+  #preview-content p { margin-bottom: 1rem; }
+
+  /* Status / spinner */
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--gray);
+    padding: 0.5rem 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* Success */
+  #success-card {
+    display: none;
+    text-align: center;
+    padding: 3rem 1.75rem;
+  }
+
+  #success-card .big-check { font-size: 4rem; margin-bottom: 1rem; }
+  #success-card h2 { color: var(--green); margin-bottom: 0.75rem; }
+  #success-card p { color: var(--gray); margin-bottom: 1.5rem; }
+
+  .hidden { display: none !important; }
+
+  /* Error */
+  .error-msg {
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+  }
+
+  @media (max-width: 560px) {
+    .type-grid { grid-template-columns: 1fr; }
+    main { margin: 1rem auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bux-Mont Hideaway ✍️</h1>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <span class="user">Hello, <strong id="user-name">__NAME__</strong></span>
+    <a href="/auth/logout">Sign out</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- Step 1: Post type -->
+  <div class="card" id="step1-card">
+    <h2><span class="step-num">1</span> What kind of post is this?</h2>
+    <div class="type-grid">
+      <label class="type-option" id="opt-quick">
+        <input type="radio" name="post-type" value="quick" checked>
+        <span class="icon">💬</span>
+        <strong>Quick Post</strong>
+        <span>A short update, like a Facebook post — a few sentences or paragraphs.</span>
+      </label>
+      <label class="type-option" id="opt-event">
+        <input type="radio" name="post-type" value="event">
+        <span class="icon">🎉</span>
+        <strong>Event Story</strong>
+        <span>A longer story about something that happened — with photos and more detail.</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Step 2: Notes -->
+  <div class="card">
+    <h2><span class="step-num">2</span> Tell us what happened</h2>
+    <textarea id="notes" rows="6" placeholder="Just jot down the key points — who was there, what happened, any funny moments, how it felt. Bullet points or full sentences, anything works!"></textarea>
+    <p class="hint">Don't worry about making it perfect — that's what the AI is for!</p>
+  </div>
+
+  <!-- Step 3: Photos (only for event) -->
+  <div class="card hidden" id="photo-card">
+    <h2><span class="step-num">3</span> Add photos <span style="font-weight:400;color:var(--gray)">(optional)</span></h2>
+    <div id="photo-zone">
+      <span class="zone-icon">📸</span>
+      <strong>Drag photos here</strong>, or click to browse<br>
+      <small>JPG, PNG, HEIC — as many as you like</small>
+      <input type="file" id="photo-input" accept="image/*" multiple>
+    </div>
+    <div id="thumbnails"></div>
+  </div>
+
+  <!-- Step 4: Generate -->
+  <div class="card">
+    <h2><span class="step-num" id="gen-step-num">3</span> Get AI help writing it</h2>
+    <p style="font-size:0.9rem;color:var(--gray);margin-bottom:1rem;">
+      Claude will turn your notes into a polished post. You can edit it afterwards.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="generate-btn" onclick="generateDraft()">
+        ✨ Help me write this
+      </button>
+    </div>
+    <div id="gen-status" class="hidden">
+      <div class="status"><div class="spinner"></div> Writing your post…</div>
+    </div>
+    <div id="gen-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- Step 5: Draft + preview -->
+  <div class="card" id="draft-card">
+    <h2><span class="step-num" id="draft-step-num">4</span> Review and edit</h2>
+
+    <div style="margin-bottom:1rem;">
+      <label for="post-title">Title</label>
+      <input type="text" id="post-title" placeholder="Your post title">
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('edit')">Edit</button>
+      <button class="tab" onclick="switchTab('preview')">Preview</button>
+    </div>
+
+    <div id="edit-pane">
+      <textarea id="draft-body" rows="12" oninput="syncPreview()" placeholder="Your post will appear here…"></textarea>
+    </div>
+    <div id="preview-pane">
+      <div id="preview-content"></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:1.25rem;">
+      <button class="btn btn-secondary" onclick="generateDraft()">✨ Rewrite</button>
+      <button class="btn btn-primary" id="publish-btn" onclick="publishPost()">🚀 Publish to Site</button>
+    </div>
+    <div id="pub-status" class="hidden">
+      <div class="status"><div class="spinner"></div> Publishing your post…</div>
+    </div>
+    <div id="pub-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- Success -->
+  <div class="card" id="success-card">
+    <div class="big-check">🎉</div>
+    <h2>Your post is published!</h2>
+    <p>It'll appear on the site in about 2 minutes while the site rebuilds.</p>
+    <button class="btn btn-primary" onclick="resetForm()">Write another post</button>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let photos = []; // Array of {file, ext, dataUrl}
+
+// ── Post type toggle ───────────────────────────────────────────────────────
+document.querySelectorAll('input[name="post-type"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isEvent = radio.value === 'event';
+    document.getElementById('photo-card').classList.toggle('hidden', !isEvent);
+    document.getElementById('gen-step-num').textContent = isEvent ? '4' : '3';
+    document.getElementById('draft-step-num').textContent = isEvent ? '5' : '4';
+    document.getElementById('opt-quick').classList.toggle('selected', !isEvent);
+    document.getElementById('opt-event').classList.toggle('selected', isEvent);
+  });
+});
+
+// Set initial selected state
+document.getElementById('opt-quick').classList.add('selected');
+
+// ── Photo handling ─────────────────────────────────────────────────────────
+const photoZone = document.getElementById('photo-zone');
+const photoInput = document.getElementById('photo-input');
+
+photoZone.addEventListener('click', () => photoInput.click());
+
+photoZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  photoZone.classList.add('dragover');
+});
+
+photoZone.addEventListener('dragleave', () => photoZone.classList.remove('dragover'));
+
+photoZone.addEventListener('drop', e => {
+  e.preventDefault();
+  photoZone.classList.remove('dragover');
+  addPhotos(Array.from(e.dataTransfer.files));
+});
+
+photoInput.addEventListener('change', e => {
+  addPhotos(Array.from(e.target.files));
+  photoInput.value = '';
+});
+
+function addPhotos(files) {
+  files.filter(f => f.type.startsWith('image/')).forEach(file => {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+      .replace('heic', 'jpg').replace('heif', 'jpg').replace('jpeg', 'jpg');
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      const idx = photos.length;
+      photos.push({ file, ext, dataUrl });
+      renderThumbnail(idx, dataUrl);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderThumbnail(idx, dataUrl) {
+  const thumbs = document.getElementById('thumbnails');
+  const wrap = document.createElement('div');
+  wrap.className = 'thumb-wrap';
+  wrap.dataset.idx = idx;
+  wrap.innerHTML = `<img src="${dataUrl}" alt="Photo ${idx+1}"><button onclick="removePhoto(${idx})" title="Remove">✕</button>`;
+  thumbs.appendChild(wrap);
+}
+
+function removePhoto(idx) {
+  photos[idx] = null; // mark deleted
+  document.querySelector(`.thumb-wrap[data-idx="${idx}"]`)?.remove();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (tab === 'edit') {
+    document.getElementById('edit-pane').style.display = '';
+    document.getElementById('preview-pane').style.display = 'none';
+    document.querySelectorAll('.tab')[0].classList.add('active');
+  } else {
+    syncPreview();
+    document.getElementById('edit-pane').style.display = 'none';
+    document.getElementById('preview-pane').style.display = '';
+    document.querySelectorAll('.tab')[1].classList.add('active');
+  }
+}
+
+function syncPreview() {
+  const body = document.getElementById('draft-body').value;
+  document.getElementById('preview-content').innerHTML = marked.parse(body);
+}
+
+// ── Generate ───────────────────────────────────────────────────────────────
+async function generateDraft() {
+  const notes = document.getElementById('notes').value.trim();
+  if (!notes) {
+    alert('Please write some notes first!');
+    return;
+  }
+
+  const postType = document.querySelector('input[name="post-type"]:checked').value;
+  const activePhotos = photos.filter(Boolean);
+
+  setGenerating(true);
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: postType, notes, photoCount: activePhotos.length }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || `Server error ${res.status}`);
+    }
+
+    const draft = await res.json();
+
+    document.getElementById('post-title').value = draft.title || '';
+    document.getElementById('draft-body').value = draft.body || '';
+    syncPreview();
+
+    document.getElementById('draft-card').style.display = '';
+    document.getElementById('draft-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showError('gen-error', null);
+  } catch (err) {
+    showError('gen-error', `Oops — ${err.message}`);
+  } finally {
+    setGenerating(false);
+  }
+}
+
+function setGenerating(on) {
+  document.getElementById('generate-btn').disabled = on;
+  document.getElementById('gen-status').classList.toggle('hidden', !on);
+  const publishBtn = document.getElementById('publish-btn');
+  if (publishBtn) publishBtn.disabled = on;
+}
+
+// ── Publish ────────────────────────────────────────────────────────────────
+async function publishPost() {
+  const title = document.getElementById('post-title').value.trim();
+  const body = document.getElementById('draft-body').value.trim();
+
+  if (!title || !body) {
+    alert('Please make sure you have a title and post content.');
+    return;
+  }
+
+  const postType = document.querySelector('input[name="post-type"]:checked').value;
+  const activePhotos = photos.filter(Boolean);
+
+  setPublishing(true);
+  showError('pub-error', null);
+
+  try {
+    const fd = new FormData();
+    fd.append('type', postType);
+    fd.append('title', title);
+    fd.append('body', body);
+
+    activePhotos.forEach((p, i) => {
+      fd.append(`photo_${i}`, p.file, `photo_${i}.${p.ext}`);
+    });
+
+    const res = await fetch('/api/publish', { method: 'POST', body: fd });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || `Server error ${res.status}`);
+    }
+
+    // Show success
+    document.getElementById('draft-card').style.display = 'none';
+    document.getElementById('success-card').style.display = '';
+    document.getElementById('success-card').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showError('pub-error', `Could not publish: ${err.message}`);
+  } finally {
+    setPublishing(false);
+  }
+}
+
+function setPublishing(on) {
+  document.getElementById('publish-btn').disabled = on;
+  document.getElementById('pub-status').classList.toggle('hidden', !on);
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────
+function resetForm() {
+  photos = [];
+  document.getElementById('notes').value = '';
+  document.getElementById('post-title').value = '';
+  document.getElementById('draft-body').value = '';
+  document.getElementById('thumbnails').innerHTML = '';
+  document.getElementById('draft-card').style.display = 'none';
+  document.getElementById('success-card').style.display = 'none';
+  document.getElementById('photo-card').classList.add('hidden');
+  document.querySelector('input[value="quick"]').checked = true;
+  document.getElementById('opt-quick').classList.add('selected');
+  document.getElementById('opt-event').classList.remove('selected');
+  document.getElementById('gen-step-num').textContent = '3';
+  document.getElementById('draft-step-num').textContent = '4';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
