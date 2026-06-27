@@ -1,0 +1,171 @@
+# Build and deploy a Hugo site to GitHub Pages with branch-specific destinations
+name: Build and deploy Hugo site to Pages
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - staging
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy (main, dev, staging)'
+        required: false
+        default: main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.paths.outputs.branch }}
+      subdir: ${{ steps.paths.outputs.subdir }}
+      baseUrl: ${{ steps.paths.outputs.baseUrl }}
+    env:
+      HUGO_VERSION: 0.161.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
+
+      - name: Setup Node.js
+        if: hashFiles('package*.json') != ''
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: ${{ hashFiles('package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock') != '' && 'npm' || '' }}
+
+      - name: Install Node.js dependencies
+        run: |
+          if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ]; then
+            npm ci
+          elif [ -f "package.json" ]; then
+            npm install
+          fi
+
+      - name: Determine deployment branch and paths
+        id: paths
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          else
+            BRANCH="${GITHUB_REF##*/}"
+          fi
+
+          case "$BRANCH" in
+            main)
+              SUBDIR=''
+              BASEURL='https://adamfermier.github.io/bux-mont-hideaway/'
+              ;;
+            dev)
+              SUBDIR='bux-mont-hideaway.dev'
+              BASEURL='https://adamfermier.github.io/bux-mont-hideaway/bux-mont-hideaway.dev/'
+              ;;
+            staging)
+              SUBDIR='bux-mont-hideaway.staging'
+              BASEURL='https://adamfermier.github.io/bux-mont-hideaway/bux-mont-hideaway.staging/'
+              ;;
+            *)
+              echo "Unsupported branch: $BRANCH"
+              exit 1
+              ;;
+          esac
+
+          if [ "$SUBDIR" = '' ]; then
+            BUILD_DIR='public'
+          else
+            BUILD_DIR="public/$SUBDIR"
+          fi
+
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "subdir=$SUBDIR" >> "$GITHUB_OUTPUT"
+          echo "baseUrl=$BASEURL" >> "$GITHUB_OUTPUT"
+          echo "buildDir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Hugo resources
+        uses: actions/cache@v5
+        with:
+          path: resources
+          key: ${{ runner.os }}-hugo-resources-${{ hashFiles('**/*.md') }}
+          restore-keys: |
+            ${{ runner.os }}-hugo-resources-
+
+      - name: Build with Hugo
+        env:
+          HUGO_ENVIRONMENT: production
+          HUGO_ENV: production
+          TZ: America/New_York
+          BASE_URL: ${{ steps.paths.outputs.baseUrl }}
+        run: |
+          mkdir -p "${{ steps.paths.outputs.buildDir }}"
+          hugo \
+            --gc \
+            --minify \
+            --baseURL "$BASE_URL" \
+            --destination "${{ steps.paths.outputs.buildDir }}" \
+            --logLevel info
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./public
+
+  deploy_main:
+    if: ${{ needs.build.outputs.branch == 'main' }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ needs.build.outputs.baseUrl }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Show deploy URL
+        run: |
+          echo "Expected Pages URL: ${{ needs.build.outputs.baseUrl }}"
+          echo "Deployed Pages URL: ${{ steps.deployment.outputs.page_url }}"
+
+  deploy_branch:
+    if: ${{ needs.build.outputs.branch != 'main' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Show deploy URL
+        run: |
+          echo "Expected Pages URL: ${{ needs.build.outputs.baseUrl }}"
+          echo "Deployed Pages URL: ${{ steps.deployment.outputs.page_url }}"
