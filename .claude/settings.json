@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp /home/adam/sites/bux-mont-hideaway/assets/farm-hero.png /home/adam/sites/bux-mont-hideaway/content/en/farm-hero.png)",
+      "Read(//home/**)",
+      "Bash(hugo config *)",
+      "Read(//home/adam/.cache/hugo_cache/modules/filecache/modules/pkg/mod/github.com/google/docsy@v0.15.0/layouts/_shortcodes/blocks/**)"
+    ],
+    "additionalDirectories": [
+      "/home/adam/sites/bux-mont-hideaway/assets"
+    ]
+  }
+}
