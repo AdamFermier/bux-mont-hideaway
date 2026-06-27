@@ -13,6 +13,6 @@ I decided to start this little site as a place to write things down — stories,
 
 Just a quiet corner of the internet, and my words.
 
-I've lived in Bucks-Montgomery county long enough to have a lot of stories to tell. Some are big, some are small. All of them are real.
+I've lived in Bucks County long enough to have a lot of stories to tell. Some are big, some are small. All of them are real.
 
 Check back whenever you feel like it. I'll be here.

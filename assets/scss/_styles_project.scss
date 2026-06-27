@@ -1,0 +1,13 @@
+// Homepage photo carousel
+.bm-carousel {
+  background: #000;
+  text-align: center;
+
+  img {
+    max-height: 70vh;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    display: block;
+  }
+}

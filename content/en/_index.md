@@ -2,12 +2,17 @@
 title: Bux-Mont Hideaway
 ---
 
-{{< blocks/cover title="Bux-Mont Hideaway" image_anchor="top" height="med" >}}
-<p class="lead">Stories, photos, and everyday moments from right here in Bucks-Montgomery county.</p>
-<a class="btn btn-lg btn-primary me-3 mb-4" href="/blog/">
+{{< carousel >}}
+
+{{< blocks/section color="dark" >}}
+<div class="text-center">
+<h1 class="display-1">Bux-Mont Hideaway</h1>
+<p class="lead mt-3">Stories, photos, and everyday moments from right here in Bucks County.</p>
+<a class="btn btn-lg btn-primary me-3 mb-4 mt-3" href="/blog/">
   Read the Blog <i class="fas fa-arrow-alt-circle-right ms-2"></i>
 </a>
-{{< /blocks/cover >}}
+</div>
+{{< /blocks/section >}}
 
 {{< blocks/section color="white" >}}
 {{% blocks/feature icon="fa-pen" title="Personal Stories" %}}
@@ -19,6 +24,6 @@ Pictures from daily life, local spots, family moments, and the beauty of the sea
 {{% /blocks/feature %}}
 
 {{% blocks/feature icon="fa-heart" title="Our Corner of PA" %}}
-A little slice of Bucks-Montgomery life, written by someone who loves it here.
+A little slice of Bucks County life, written by someone who loves it here.
 {{% /blocks/feature %}}
 {{< /blocks/section >}}

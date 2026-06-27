@@ -34,7 +34,7 @@ languages:
     label: English
     contentDir: content/en
     params:
-      description: A personal hideaway — stories, photos, and everyday moments from Bucks-Montgomery county.
+      description: A personal hideaway — stories, photos, and everyday moments from Bucks County.
 
 markup:
   goldmark:
