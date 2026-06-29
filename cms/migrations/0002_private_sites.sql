@@ -1,0 +1,11 @@
+ALTER TABLE sites ADD COLUMN repo_seq INTEGER;
+ALTER TABLE sites ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public';
+ALTER TABLE sites ADD COLUMN custom_domain TEXT;
+ALTER TABLE sites ADD COLUMN pages_project TEXT;
+ALTER TABLE sites ADD COLUMN transfer_requested_at TEXT;
+
+CREATE TABLE seq (
+  id INTEGER PRIMARY KEY,
+  next_val INTEGER NOT NULL DEFAULT 1
+);
+INSERT INTO seq VALUES (1, 1);

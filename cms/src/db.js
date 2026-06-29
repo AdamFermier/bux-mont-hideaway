@@ -60,10 +60,10 @@ export async function listSites(db) {
   return results;
 }
 
-export async function createSite(db, { id, name, github_repo, github_token, github_branch = 'main' }) {
+export async function createSite(db, { id, name, github_repo, github_branch = 'main', visibility = 'public', custom_domain = null }) {
   await db
-    .prepare('INSERT INTO sites (id, name, github_repo, github_token, github_branch) VALUES (?, ?, ?, ?, ?)')
-    .bind(id, name, github_repo, github_token, github_branch)
+    .prepare('INSERT INTO sites (id, name, github_repo, github_branch, visibility, custom_domain) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, name, github_repo, github_branch, visibility, custom_domain)
     .run();
 }
 

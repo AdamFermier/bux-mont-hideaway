@@ -416,6 +416,23 @@
     <button class="btn btn-primary" onclick="resetForm()">Write another post</button>
   </div>
 
+  <!-- Your Data -->
+  <div class="card" style="margin-top:2.5rem;border-top:3px solid var(--green-light)">
+    <h2 style="font-size:0.95rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">Your Data</h2>
+    <p style="font-size:0.875rem;color:var(--gray);margin-bottom:1rem;line-height:1.55">
+      Your posts belong to you — always. Download them any time, in standard formats that work anywhere.
+    </p>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      <a href="/export/content" class="btn btn-secondary" style="font-size:0.875rem;text-decoration:none">
+        ⬇ Download my posts
+      </a>
+      <a href="/export/html" class="btn btn-secondary" style="font-size:0.875rem;text-decoration:none" onclick="handleHtmlExport(event)">
+        ⬇ Download my website
+      </a>
+    </div>
+    <p class="hint" style="margin-top:0.75rem">Posts download as standard text files (Markdown) + photos. Site export provides instructions to download the complete built HTML.</p>
+  </div>
+
 </main>
 
 <script>
@@ -631,6 +648,14 @@ function showError(id, msg) {
   if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
   el.textContent = msg;
   el.classList.remove('hidden');
+}
+
+async function handleHtmlExport(e) {
+  e.preventDefault();
+  const res = await fetch('/export/html');
+  if (!res.ok) { alert('Export unavailable — please contact support.'); return; }
+  const data = await res.json();
+  alert(`To download your complete website:\n\n${data.tip}\n\nOr visit: ${data.deploymentUrl}`);
 }
 </script>
 </body>

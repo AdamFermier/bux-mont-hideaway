@@ -64,7 +64,8 @@ async function createBlob(token, repo, content, encoding = 'utf-8') {
 }
 
 export async function publishPost(env, { repo, branch = 'main', type, title, description, body, authorName, photos }) {
-  const token = env.GITHUB_TOKEN;
+  // Use org token for new-style sites; fall back to legacy per-site token
+  const token = env.GITHUB_ORG_TOKEN || env.GITHUB_TOKEN;
 
   // 1. Get current HEAD commit
   const ref = await ghFetch(token, `/repos/${repo}/git/ref/heads/${branch}`);

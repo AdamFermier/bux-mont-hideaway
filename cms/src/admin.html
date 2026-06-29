@@ -11,7 +11,7 @@
   header { background: var(--green); color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
   header h1 { font-size: 1.1rem; font-weight: 700; }
   header a { color: white; font-size: 0.85rem; opacity: 0.8; }
-  main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
   h2 { font-size: 1.1rem; font-weight: 700; color: var(--green); margin-bottom: 1rem; }
   .card { background: white; border-radius: var(--radius); box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 1.5rem; margin-bottom: 1.5rem; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -19,11 +19,14 @@
   td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   .badge { display: inline-block; background: var(--green-light); color: var(--green); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; }
+  .badge-private { background: #fef3c7; color: #92400e; }
   .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 7px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; }
   .btn-primary { background: var(--green); color: white; }
   .btn-primary:hover { background: #245f3f; }
   .btn-danger { background: #fee2e2; color: #dc2626; }
   .btn-danger:hover { background: #fecaca; }
+  .btn-warning { background: #fef3c7; color: #92400e; }
+  .btn-warning:hover { background: #fde68a; }
   .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
   .btn-link { background: none; color: var(--green); text-decoration: underline; padding: 0; font-size: 0.875rem; cursor: pointer; border: none; }
   input, select { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit; }
@@ -38,7 +41,13 @@
   .empty { color: var(--gray); font-size: 0.9rem; text-align: center; padding: 1.5rem; }
   .success { background: #d1fae5; color: #065f46; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
   .error { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
+  .info { background: #eff6ff; color: #1e40af; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
   #site-detail { display: none; }
+  .radio-group { display: flex; gap: 1.5rem; margin-top: 0.3rem; }
+  .radio-group label { display: flex; align-items: center; gap: 0.4rem; font-weight: normal; cursor: pointer; }
+  .radio-group input[type=radio] { width: auto; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -55,11 +64,11 @@
   <div class="card">
     <div class="section-header">
       <h2>Sites</h2>
-      <button class="btn btn-primary" onclick="toggleForm('add-site-form')">+ Add Site</button>
+      <button class="btn btn-primary" onclick="toggleForm('add-site-form')">+ New Site</button>
     </div>
 
     <div id="add-site-form" class="collapsible">
-      <form onsubmit="addSite(event)">
+      <form onsubmit="addSite(event)" id="new-site-form">
         <div class="form-grid">
           <div>
             <label>Slug (subdomain)</label>
@@ -71,28 +80,28 @@
             <input type="text" name="name" required placeholder="Bux-Mont Hideaway">
           </div>
           <div>
-            <label>GitHub Repo</label>
-            <input type="text" name="github_repo" required placeholder="owner/repo-name">
+            <label>Custom Domain <span style="font-weight:normal;color:var(--gray)">(optional)</span></label>
+            <input type="text" name="custom_domain" placeholder="bux-mont-hideaway.org">
+            <p class="hint">Customer's own domain — configure DNS after creation</p>
           </div>
           <div>
-            <label>Branch</label>
-            <input type="text" name="github_branch" value="main">
-          </div>
-          <div class="full">
-            <label>GitHub Token</label>
-            <input type="password" name="github_token" required placeholder="github_pat_...">
-            <p class="hint">Fine-grained PAT with Contents: Read &amp; Write on this repo</p>
+            <label>Visibility</label>
+            <div class="radio-group">
+              <label><input type="radio" name="visibility" value="public" checked> Public <span style="font-size:0.8rem;color:var(--gray)">(anyone can read)</span></label>
+              <label><input type="radio" name="visibility" value="private"> Private <span style="font-size:0.8rem;color:var(--gray)">(email auth required)</span></label>
+            </div>
           </div>
         </div>
-        <div style="margin-top:1rem">
-          <button type="submit" class="btn btn-primary">Create Site</button>
+        <div style="margin-top:1rem;display:flex;align-items:center;gap:0.75rem">
+          <button type="submit" class="btn btn-primary" id="create-site-btn">Create &amp; Provision Site</button>
+          <span style="font-size:0.82rem;color:var(--gray)">Creates private GitHub repo + Cloudflare Pages project automatically</span>
         </div>
       </form>
     </div>
 
-    <table id="sites-table">
-      <thead><tr><th>Slug</th><th>Name</th><th>Repo</th><th>Users</th><th>URL</th><th></th></tr></thead>
-      <tbody id="sites-body"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+    <table id="sites-table" style="margin-top:0.5rem">
+      <thead><tr><th>Slug</th><th>Name</th><th>Visibility</th><th>Repo</th><th>Users</th><th>Links</th><th></th></tr></thead>
+      <tbody id="sites-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
     </table>
   </div>
 
@@ -100,7 +109,10 @@
   <div class="card" id="site-detail">
     <div class="section-header">
       <h2>Users — <span id="detail-site-name"></span></h2>
-      <button class="btn btn-link" onclick="closeSiteDetail()">← Back to sites</button>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <button class="btn btn-sm btn-warning" onclick="transferRepo()">Transfer repo</button>
+        <button class="btn btn-link" onclick="closeSiteDetail()">← Back</button>
+      </div>
     </div>
 
     <div id="add-user-form" class="collapsible open">
@@ -138,11 +150,11 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-function showMsg(text, isError = false) {
+function showMsg(text, isError = false, isInfo = false) {
   const el = document.getElementById('msg');
-  el.className = isError ? 'error' : 'success';
+  el.className = isInfo ? 'info' : (isError ? 'error' : 'success');
   el.textContent = text;
-  setTimeout(() => { el.textContent = ''; el.className = ''; }, 4000);
+  if (!isInfo) setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
 }
 
 function toggleForm(id) {
@@ -162,17 +174,21 @@ async function loadSites() {
 function renderSites(sites) {
   const tbody = document.getElementById('sites-body');
   if (!sites.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">No sites yet. Add one above.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No sites yet. Click "+ New Site" above.</td></tr>';
     return;
   }
   tbody.innerHTML = sites.map(s => `
     <tr>
       <td><code>${s.id}</code></td>
       <td>${s.name}</td>
-      <td><small>${s.github_repo}</small></td>
+      <td><span class="badge ${s.visibility === 'private' ? 'badge-private' : ''}">${s.visibility || 'public'}</span></td>
+      <td><small style="color:var(--gray)">${s.github_repo || '—'}</small></td>
       <td><span class="badge">${s.user_count}</span></td>
-      <td><a href="https://${s.id}.scribe-it.app" target="_blank" style="color:var(--green);font-size:0.85rem">Open ↗</a></td>
-      <td><button class="btn btn-sm btn-danger" onclick="openSiteDetail('${s.id}','${s.name.replace(/'/g,"\\'")}')">Manage users</button></td>
+      <td>
+        <a href="https://${s.id}.scribe-it.app" target="_blank" style="color:var(--green);font-size:0.82rem;margin-right:0.5rem">CMS ↗</a>
+        ${s.custom_domain ? `<a href="https://${s.custom_domain}" target="_blank" style="color:var(--green);font-size:0.82rem">Site ↗</a>` : ''}
+      </td>
+      <td><button class="btn btn-sm btn-primary" onclick="openSiteDetail('${s.id}','${s.name.replace(/'/g,"\\'")}')">Manage</button></td>
     </tr>
   `).join('');
 }
@@ -180,18 +196,25 @@ function renderSites(sites) {
 async function addSite(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
+  const btn = document.getElementById('create-site-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Provisioning…';
+  showMsg('Creating GitHub repo and Cloudflare Pages project… this may take 15–30 seconds.', false, true);
   try {
-    await api('/api/admin/sites', {
+    const result = await api('/api/admin/sites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(Object.fromEntries(fd)),
     });
-    showMsg('Site created!');
+    showMsg(`Site created! Repo: ${result.fullRepo}${result.pagesProject ? ' · Pages: ' + result.pagesProject : ''}`);
     e.target.reset();
     document.getElementById('add-site-form').classList.remove('open');
     loadSites();
   } catch (err) {
     showMsg(err.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Create &amp; Provision Site';
   }
 }
 
@@ -258,6 +281,23 @@ async function removeUser(userId) {
     await api(`/api/admin/sites/${currentSiteId}/users/${userId}`, { method: 'DELETE' });
     showMsg('User removed.');
     loadUsers(currentSiteId);
+  } catch (err) {
+    showMsg(err.message, true);
+  }
+}
+
+async function transferRepo() {
+  if (!currentSiteId) return;
+  const target = prompt('Enter the GitHub username or org to transfer the repo to:');
+  if (!target) return;
+  if (!confirm(`Transfer repo for "${currentSiteId}" to GitHub account "${target}"? This cannot be undone.`)) return;
+  try {
+    await api(`/api/admin/sites/${currentSiteId}/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_owner: target }),
+    });
+    showMsg(`Repo transfer initiated to ${target}. GitHub will send an invitation email.`);
   } catch (err) {
     showMsg(err.message, true);
   }
