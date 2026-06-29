@@ -10,18 +10,20 @@ fallthrough = true
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "REPLACE_WITH_SESSION_KV_ID"
-preview_id = "REPLACE_WITH_SESSION_KV_PREVIEW_ID"
+id = "21dae3ac56c645ecb708f8e31ab8e762"
+preview_id = "d9055fff0d9541e59e220a89244de090"
 
-[vars]
-# Set BASE_URL after first deploy to your actual workers.dev URL (or custom domain)
-# BASE_URL = "https://bux-mont-hideaway-cms.YOUR_ACCOUNT.workers.dev"
+[[d1_databases]]
+binding = "DB"
+database_name = "scribe-it"
+database_id = "41958058-aed4-41bf-968a-6faf4e10ade9"
+
+[[routes]]
+pattern = "*.scribe-it.app/*"
+zone_name = "scribe-it.app"
 
 # Secrets (set via `wrangler secret put <NAME>`):
-#   GOOGLE_CLIENT_ID
-#   GOOGLE_CLIENT_SECRET
 #   ANTHROPIC_API_KEY
-#   GITHUB_TOKEN
-#   ALLOWED_EMAILS     (comma-separated parent Gmail addresses)
-#   SESSION_SECRET     (random 32-char hex string)
-#   BASE_URL           (e.g. https://bux-mont-hideaway-cms.YOUR_SUBDOMAIN.workers.dev)
+#   SESSION_SECRET
+#   RESEND_API_KEY
+#   ADMIN_EMAIL      (adam.fermier@gmail.com)

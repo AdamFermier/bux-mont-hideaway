@@ -1,91 +1,175 @@
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
+import { saveOTP, verifyOTP, getUserForSite } from './db.js';
+import { sendOTPEmail } from './email.js';
 
-const SESSION_COOKIE = 'bm_session';
-const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const SESSION_COOKIE = 'si_session';
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 
-function callbackUrl(env) {
-  return `${env.BASE_URL}/auth/callback`;
+function generateCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export async function handleLogin(env) {
-  const params = new URLSearchParams({
-    client_id: env.GOOGLE_CLIENT_ID,
-    redirect_uri: callbackUrl(env),
-    response_type: 'code',
-    scope: 'openid email profile',
-    access_type: 'online',
-    prompt: 'select_account',
-  });
-  return Response.redirect(`${GOOGLE_AUTH_URL}?${params}`, 302);
+export function loginPage(siteName, error = null) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — ${escHtml(siteName)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f9fafb;
+     display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);
+      padding:2.5rem;width:100%;max-width:380px}
+.logo{font-size:1.1rem;font-weight:700;color:#2e7d52;margin-bottom:0.25rem}
+h1{font-size:1.4rem;margin-bottom:0.5rem}
+p{color:#6b7280;font-size:0.9rem;margin-bottom:1.5rem;line-height:1.5}
+label{display:block;font-weight:600;font-size:0.9rem;margin-bottom:0.4rem}
+input{width:100%;border:1.5px solid #d1d5db;border-radius:8px;padding:0.75rem;
+      font-size:1rem;outline:none;transition:border-color 0.15s}
+input:focus{border-color:#2e7d52;box-shadow:0 0 0 3px rgba(46,125,82,0.1)}
+button{width:100%;margin-top:1rem;background:#2e7d52;color:#fff;border:none;
+       border-radius:8px;padding:0.85rem;font-size:1rem;font-weight:600;cursor:pointer}
+button:hover{background:#245f3f}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:0.75rem;
+     font-size:0.875rem;margin-bottom:1rem}
+</style></head>
+<body><div class="card">
+  <div class="logo">✍️ Scribe-It</div>
+  <h1>${escHtml(siteName)}</h1>
+  <p>Enter your email address and we'll send you a sign-in code.</p>
+  ${error ? `<div class="err">${escHtml(error)}</div>` : ''}
+  <form method="POST" action="/auth/request">
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+    <button type="submit">Send sign-in code</button>
+  </form>
+</div></body></html>`;
 }
 
-export async function handleCallback(request, env) {
-  const url = new URL(request.url);
-  const code = url.searchParams.get('code');
-  if (!code) {
-    return new Response('Missing OAuth code', { status: 400 });
+export function otpPage(siteName, email, error = null) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enter code — ${escHtml(siteName)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f9fafb;
+     display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);
+      padding:2.5rem;width:100%;max-width:380px}
+.logo{font-size:1.1rem;font-weight:700;color:#2e7d52;margin-bottom:0.25rem}
+h1{font-size:1.4rem;margin-bottom:0.5rem}
+p{color:#6b7280;font-size:0.9rem;margin-bottom:1.5rem;line-height:1.5}
+label{display:block;font-weight:600;font-size:0.9rem;margin-bottom:0.4rem}
+input{width:100%;border:1.5px solid #d1d5db;border-radius:8px;padding:0.75rem;
+      font-size:1.5rem;letter-spacing:0.3rem;text-align:center;outline:none;transition:border-color 0.15s}
+input:focus{border-color:#2e7d52;box-shadow:0 0 0 3px rgba(46,125,82,0.1)}
+button{width:100%;margin-top:1rem;background:#2e7d52;color:#fff;border:none;
+       border-radius:8px;padding:0.85rem;font-size:1rem;font-weight:600;cursor:pointer}
+button:hover{background:#245f3f}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:0.75rem;
+     font-size:0.875rem;margin-bottom:1rem}
+.back{display:block;text-align:center;margin-top:1rem;color:#6b7280;font-size:0.85rem}
+a{color:#2e7d52}
+</style></head>
+<body><div class="card">
+  <div class="logo">✍️ Scribe-It</div>
+  <h1>Check your email</h1>
+  <p>We sent a 6-digit code to <strong>${escHtml(email)}</strong>. It expires in 5 minutes.</p>
+  ${error ? `<div class="err">${escHtml(error)}</div>` : ''}
+  <form method="POST" action="/auth/verify">
+    <input type="hidden" name="email" value="${escHtml(email)}">
+    <label for="code">Sign-in code</label>
+    <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]{6}"
+           maxlength="6" required autocomplete="one-time-code" placeholder="000000">
+    <button type="submit">Sign in</button>
+  </form>
+  <a class="back" href="/auth/login">Use a different email</a>
+</div></body></html>`;
+}
+
+export async function handleAuthRequest(request, env, siteId, siteName, isAdmin) {
+  const body = await request.formData();
+  const email = (body.get('email') || '').trim().toLowerCase();
+
+  if (!email || !email.includes('@')) {
+    return html(loginPage(siteName, 'Please enter a valid email address.'));
   }
 
-  // Exchange code for tokens
-  const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      code,
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: callbackUrl(env),
-      grant_type: 'authorization_code',
-    }),
-  });
-  if (!tokenRes.ok) {
-    return new Response('Failed to exchange OAuth code', { status: 500 });
-  }
-  const { access_token } = await tokenRes.json();
-
-  // Get user info
-  const userRes = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${access_token}` },
-  });
-  if (!userRes.ok) {
-    return new Response('Failed to fetch user info', { status: 500 });
-  }
-  const { email, name } = await userRes.json();
-
-  // Check allowlist
-  const allowed = (env.ALLOWED_EMAILS || '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase());
-  if (!allowed.includes(email.toLowerCase())) {
-    return new Response(accessDeniedHtml(email), {
-      status: 403,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+  // Check authorization
+  if (isAdmin) {
+    if (email !== (env.ADMIN_EMAIL || '').toLowerCase()) {
+      return html(loginPage(siteName, 'That email is not authorized for the admin panel.'));
+    }
+  } else {
+    const user = await getUserForSite(env.DB, siteId, email);
+    if (!user) {
+      return html(loginPage(siteName, 'That email is not authorized for this site. Ask your site admin to add you.'));
+    }
   }
 
-  // Create session
-  const sessionToken = crypto.randomUUID();
+  const code = generateCode();
+  await saveOTP(env.DB, siteId, email, code);
+
+  try {
+    await sendOTPEmail(env, { to: email, code, siteName });
+  } catch (err) {
+    console.error('Email send failed:', err);
+    return html(loginPage(siteName, 'Failed to send sign-in email. Please try again.'));
+  }
+
+  return html(otpPage(siteName, email));
+}
+
+export async function handleAuthVerify(request, env, siteId, isAdmin) {
+  const body = await request.formData();
+  const email = (body.get('email') || '').trim().toLowerCase();
+  const code = (body.get('code') || '').trim();
+  const siteName = isAdmin ? 'Admin Panel' : siteId;
+
+  if (!email || !code) {
+    return html(otpPage(siteName, email, 'Please enter the code from your email.'));
+  }
+
+  const valid = await verifyOTP(env.DB, siteId, email, code);
+  if (!valid) {
+    return html(otpPage(siteName, email, 'That code is incorrect or has expired. Please try again.'));
+  }
+
+  // Get display name
+  let displayName = email;
+  if (!isAdmin) {
+    const user = await getUserForSite(env.DB, siteId, email);
+    displayName = user?.display_name || email;
+  } else {
+    displayName = 'Admin';
+  }
+
+  const token = crypto.randomUUID();
   await env.SESSIONS.put(
-    sessionToken,
-    JSON.stringify({ email, name }),
-    { expirationTtl: SESSION_TTL_SECONDS }
+    token,
+    JSON.stringify({ email, site_id: siteId, display_name: displayName }),
+    { expirationTtl: 7 * 24 * 60 * 60 }
   );
 
   return new Response(null, {
     status: 302,
     headers: {
       Location: '/',
-      'Set-Cookie': `${SESSION_COOKIE}=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}; Path=/`,
+      'Set-Cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}; Path=/`,
     },
   });
 }
 
-export async function handleLogout(env, sessionToken) {
-  if (sessionToken) {
-    await env.SESSIONS.delete(sessionToken);
-  }
+export async function getSession(request, env) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`));
+  if (!match) return null;
+  const raw = await env.SESSIONS.get(match[1]);
+  if (!raw) return null;
+  return { ...JSON.parse(raw), token: match[1] };
+}
+
+export function clearSession(token) {
   return new Response(null, {
     status: 302,
     headers: {
@@ -95,27 +179,10 @@ export async function handleLogout(env, sessionToken) {
   });
 }
 
-// Returns session {email, name} or null
-export async function getSession(request, env) {
-  const cookieHeader = request.headers.get('Cookie') || '';
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`));
-  if (!match) return null;
-  const token = match[1];
-  const raw = await env.SESSIONS.get(token);
-  if (!raw) return null;
-  return { ...JSON.parse(raw), token };
+function html(body) {
+  return new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
-function accessDeniedHtml(email) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Access Denied</title>
-<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8f9fa}
-.box{text-align:center;padding:2rem;max-width:400px}</style></head>
-<body><div class="box">
-<h2>Access Denied</h2>
-<p>${email} is not authorized to use this tool.</p>
-<p>Please ask Adam to add your email to the allowed list.</p>
-<a href="/auth/login">Try a different account</a>
-</div></body></html>`;
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

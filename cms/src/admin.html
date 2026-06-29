@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scribe-It Admin</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --green: #2e7d52; --green-light: #e8f5ee; --border: #d1d5db; --gray: #6b7280; --radius: 10px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; color: #1f2937; }
+  header { background: var(--green); color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1.1rem; font-weight: 700; }
+  header a { color: white; font-size: 0.85rem; opacity: 0.8; }
+  main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  h2 { font-size: 1.1rem; font-weight: 700; color: var(--green); margin-bottom: 1rem; }
+  .card { background: white; border-radius: var(--radius); box-shadow: 0 2px 12px rgba(0,0,0,0.07); padding: 1.5rem; margin-bottom: 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--border); color: var(--gray); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; background: var(--green-light); color: var(--green); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; }
+  .btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 7px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: #245f3f; }
+  .btn-danger { background: #fee2e2; color: #dc2626; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+  .btn-link { background: none; color: var(--green); text-decoration: underline; padding: 0; font-size: 0.875rem; cursor: pointer; border: none; }
+  input, select { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: inherit; }
+  input:focus, select:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(46,125,82,0.1); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; color: #374151; }
+  .hint { font-size: 0.8rem; color: var(--gray); margin-top: 0.2rem; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .collapsible { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  .collapsible.open { display: block; }
+  .empty { color: var(--gray); font-size: 0.9rem; text-align: center; padding: 1.5rem; }
+  .success { background: #d1fae5; color: #065f46; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
+  .error { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem; margin-bottom: 1rem; }
+  #site-detail { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✍️ Scribe-It — Admin</h1>
+  <a href="/auth/logout">Sign out</a>
+</header>
+
+<main>
+  <div id="msg"></div>
+
+  <!-- Sites list -->
+  <div class="card">
+    <div class="section-header">
+      <h2>Sites</h2>
+      <button class="btn btn-primary" onclick="toggleForm('add-site-form')">+ Add Site</button>
+    </div>
+
+    <div id="add-site-form" class="collapsible">
+      <form onsubmit="addSite(event)">
+        <div class="form-grid">
+          <div>
+            <label>Slug (subdomain)</label>
+            <input type="text" name="id" required placeholder="bux-mont" pattern="[a-z0-9-]+" title="Lowercase letters, numbers, hyphens only">
+            <p class="hint">Becomes: slug.scribe-it.app</p>
+          </div>
+          <div>
+            <label>Display Name</label>
+            <input type="text" name="name" required placeholder="Bux-Mont Hideaway">
+          </div>
+          <div>
+            <label>GitHub Repo</label>
+            <input type="text" name="github_repo" required placeholder="owner/repo-name">
+          </div>
+          <div>
+            <label>Branch</label>
+            <input type="text" name="github_branch" value="main">
+          </div>
+          <div class="full">
+            <label>GitHub Token</label>
+            <input type="password" name="github_token" required placeholder="github_pat_...">
+            <p class="hint">Fine-grained PAT with Contents: Read &amp; Write on this repo</p>
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <button type="submit" class="btn btn-primary">Create Site</button>
+        </div>
+      </form>
+    </div>
+
+    <table id="sites-table">
+      <thead><tr><th>Slug</th><th>Name</th><th>Repo</th><th>Users</th><th>URL</th><th></th></tr></thead>
+      <tbody id="sites-body"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Site detail / users -->
+  <div class="card" id="site-detail">
+    <div class="section-header">
+      <h2>Users — <span id="detail-site-name"></span></h2>
+      <button class="btn btn-link" onclick="closeSiteDetail()">← Back to sites</button>
+    </div>
+
+    <div id="add-user-form" class="collapsible open">
+      <form onsubmit="addUser(event)">
+        <input type="hidden" name="site_id" id="detail-site-id">
+        <div class="form-grid">
+          <div>
+            <label>Email</label>
+            <input type="email" name="email" required placeholder="user@gmail.com">
+          </div>
+          <div>
+            <label>Display Name</label>
+            <input type="text" name="display_name" placeholder="Mom & Dad">
+          </div>
+        </div>
+        <div style="margin-top:0.75rem">
+          <button type="submit" class="btn btn-primary">Add User</button>
+        </div>
+      </form>
+    </div>
+
+    <table style="margin-top:1rem">
+      <thead><tr><th>Email</th><th>Display Name</th><th></th></tr></thead>
+      <tbody id="users-body"><tr><td colspan="3" class="empty">No users yet.</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+let currentSiteId = null;
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function showMsg(text, isError = false) {
+  const el = document.getElementById('msg');
+  el.className = isError ? 'error' : 'success';
+  el.textContent = text;
+  setTimeout(() => { el.textContent = ''; el.className = ''; }, 4000);
+}
+
+function toggleForm(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ── Sites ─────────────────────────────────────────────────────────────────
+async function loadSites() {
+  try {
+    const sites = await api('/api/admin/sites');
+    renderSites(sites);
+  } catch (e) {
+    showMsg(e.message, true);
+  }
+}
+
+function renderSites(sites) {
+  const tbody = document.getElementById('sites-body');
+  if (!sites.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No sites yet. Add one above.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sites.map(s => `
+    <tr>
+      <td><code>${s.id}</code></td>
+      <td>${s.name}</td>
+      <td><small>${s.github_repo}</small></td>
+      <td><span class="badge">${s.user_count}</span></td>
+      <td><a href="https://${s.id}.scribe-it.app" target="_blank" style="color:var(--green);font-size:0.85rem">Open ↗</a></td>
+      <td><button class="btn btn-sm btn-danger" onclick="openSiteDetail('${s.id}','${s.name.replace(/'/g,"\\'")}')">Manage users</button></td>
+    </tr>
+  `).join('');
+}
+
+async function addSite(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    await api('/api/admin/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(fd)),
+    });
+    showMsg('Site created!');
+    e.target.reset();
+    document.getElementById('add-site-form').classList.remove('open');
+    loadSites();
+  } catch (err) {
+    showMsg(err.message, true);
+  }
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────
+async function openSiteDetail(siteId, siteName) {
+  currentSiteId = siteId;
+  document.getElementById('detail-site-id').value = siteId;
+  document.getElementById('detail-site-name').textContent = siteName;
+  document.getElementById('site-detail').style.display = '';
+  loadUsers(siteId);
+}
+
+function closeSiteDetail() {
+  document.getElementById('site-detail').style.display = 'none';
+  currentSiteId = null;
+}
+
+async function loadUsers(siteId) {
+  try {
+    const users = await api(`/api/admin/sites/${siteId}/users`);
+    renderUsers(users);
+  } catch (e) {
+    showMsg(e.message, true);
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-body');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No users yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.email}</td>
+      <td>${u.display_name || '<em style="color:var(--gray)">—</em>'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeUser(${u.id})">Remove</button></td>
+    </tr>
+  `).join('');
+}
+
+async function addUser(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const siteId = fd.get('site_id');
+  try {
+    await api(`/api/admin/sites/${siteId}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: fd.get('email'), display_name: fd.get('display_name') }),
+    });
+    showMsg('User added!');
+    e.target.querySelector('input[name="email"]').value = '';
+    e.target.querySelector('input[name="display_name"]').value = '';
+    loadUsers(siteId);
+  } catch (err) {
+    showMsg(err.message, true);
+  }
+}
+
+async function removeUser(userId) {
+  if (!currentSiteId || !confirm('Remove this user?')) return;
+  try {
+    await api(`/api/admin/sites/${currentSiteId}/users/${userId}`, { method: 'DELETE' });
+    showMsg('User removed.');
+    loadUsers(currentSiteId);
+  } catch (err) {
+    showMsg(err.message, true);
+  }
+}
+
+loadSites();
+</script>
+</body>
+</html>
