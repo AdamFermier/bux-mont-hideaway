@@ -4,7 +4,13 @@
       "Bash(cp /home/adam/sites/bux-mont-hideaway/assets/farm-hero.png /home/adam/sites/bux-mont-hideaway/content/en/farm-hero.png)",
       "Read(//home/**)",
       "Bash(hugo config *)",
-      "Read(//home/adam/.cache/hugo_cache/modules/filecache/modules/pkg/mod/github.com/google/docsy@v0.15.0/layouts/_shortcodes/blocks/**)"
+      "Read(//home/adam/.cache/hugo_cache/modules/filecache/modules/pkg/mod/github.com/google/docsy@v0.15.0/layouts/_shortcodes/blocks/**)",
+      "Bash(git -C /home/adam/sites/bux-mont-hideaway status)",
+      "Bash(git -C /home/adam/sites/bux-mont-hideaway log --oneline -3)",
+      "Bash(git -C /home/adam/sites/bux-mont-hideaway add cms/)",
+      "Bash(git -C /home/adam/sites/bux-mont-hideaway commit -m ' *)",
+      "Bash(npx wrangler *)",
+      "Bash(python3 -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")"
     ],
     "additionalDirectories": [
       "/home/adam/sites/bux-mont-hideaway/assets"
